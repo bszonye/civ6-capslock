@@ -2331,3 +2331,5 @@ function AssignStartingPlots:__IsContinentalDivide(plot)
 	
 	return false;
 end
+
+-- vim: sw=4 ts=4
