@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="475e175c-0e19-4918-8771-3b849b261ac2" version="0.9.0">
+  <Properties>
+    <Name>Hot Spots</Name>
+    <Description>Starting plot improvements</Description>
+    <Teaser>Starting plot improvements</Teaser>
+    <Authors>Bradd Szonye</Authors>
+    <AffectsSavedGames>0</AffectsSavedGames>
+  </Properties>
+  <InGameActions>
+    <ImportFiles id="HOTSPOTS_FILES">
+      <Properties>
+        <LoadOrder>12000</LoadOrder>
+      </Properties>
+      <File>assignstartingplots.lua</File>
+    </ImportFiles>
+  </InGameActions>
+  <Files>
+    <File>assignstartingplots.lua</File>
+  </Files>
+</Mod>
