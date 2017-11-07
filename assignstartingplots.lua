@@ -295,6 +295,17 @@ function AssignStartingPlots:__InitStartingData()
 		end
 	end
 
+	-- XXX: debug
+	-- RevealAll(1);
+end
+
+------------------------------------------------------------------------------
+-- XXX: debug
+function RevealAll(level:number)
+	local pVis = PlayersVisibility[Game.GetLocalPlayer()];
+	for iPlotIndex = 0, Map.GetPlotCount()-1, 1 do
+			pVis:ChangeVisibilityCount(iPlotIndex, level);
+	end
 end
 
 ------------------------------------------------------------------------------
@@ -348,8 +359,8 @@ function AssignStartingPlots:__SetStartMajor(plots)
 	end
 
 	local bValid = false;
-	local pFallback:table = Map.GetPlotByIndex(sortedPlots[1].Plot);
-	local iFallBackScore = 0;
+	local pFallback:table = nil;
+	local iFallBackScore = 1;
 	while bValid == false and iSize >= iContinentIndex do
 		bValid = true;
 		local NWMajor = 0;
@@ -362,7 +373,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 0;
-			if (iFallBackScore <= iFallBackScoreTemp) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -373,7 +384,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 1;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -385,7 +396,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 2;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -398,7 +409,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 				bValid = false;
 			else
 				local iFallBackScoreTemp = 3;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -418,7 +429,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 4;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -429,7 +440,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 5;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -441,7 +452,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 6;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -455,7 +466,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			end
 		else
 			local iFallBackScoreTemp = 7;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -471,10 +482,18 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		if(bValid == true) then
 			self:__TryToRemoveBonusResource(pTempPlot);
 			self:__AddBonusFoodProduction(pTempPlot);
+			print(string.format("major ok"));
 			return pTempPlot;
 		end
 	end
 
+	if pFallback then
+		self:__TryToRemoveBonusResource(pTempPlot);
+		self:__AddBonusFoodProduction(pTempPlot);
+		print(string.format("major fallback %d", iFallBackScore));
+	else
+		print(string.format("major failed"));
+	end
 	return pFallback;
 end
 
@@ -512,8 +531,8 @@ function AssignStartingPlots:__SetStartMinor(plots)
 	table.sort (sortedPlots, function(a, b) return a.Fertility > b.Fertility; end);
 
 	local bValid = false;
-	local pFallback:table = Map.GetPlotByIndex(sortedPlots[1].Plot);
-	local iFallBackScore = 0;
+	local pFallback:table = nil;
+	local iFallBackScore = 1;
 	while bValid == false and iSize >= iContinentIndex do
 		bValid = true;
 		local NWMinor = 2;
@@ -526,7 +545,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 0;
-			if (iFallBackScore <= iFallBackScoreTemp) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -537,7 +556,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 1;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -549,7 +568,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 2;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -560,7 +579,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 3;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -572,7 +591,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 4;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -586,7 +605,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			end
 		else
 			local iFallBackScoreTemp = 5;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -601,10 +620,17 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		-- If the plots passes all the checks then the plot equals the temp plot
 		if(bValid == true) then
 			self:__TryToRemoveBonusResource(pTempPlot);
+			print(string.format("minor ok"));
 			return pTempPlot;
 		end
 	end
 
+	if pFallback then
+		self:__TryToRemoveBonusResource(pTempPlot);
+		print(string.format("minor fallback %d", iFallBackScore));
+	else
+		print(string.format("minor failed"));
+	end
 	return pFallback;
 end
 
