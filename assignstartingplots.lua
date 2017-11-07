@@ -296,7 +296,7 @@ function AssignStartingPlots:__InitStartingData()
 	end
 
 	-- XXX: debug
-	-- RevealAll(1);
+	--RevealAll(0);
 end
 
 ------------------------------------------------------------------------------
@@ -304,8 +304,12 @@ end
 function RevealAll(level:number)
 	local pVis = PlayersVisibility[Game.GetLocalPlayer()];
 	for iPlotIndex = 0, Map.GetPlotCount()-1, 1 do
-			pVis:ChangeVisibilityCount(iPlotIndex, level);
+		pVis:ChangeVisibilityCount(iPlotIndex, level or 1);
 	end
+end
+function RevealPlot(plot:table, level:number)
+	local pVis = PlayersVisibility[Game.GetLocalPlayer()];
+	pVis:ChangeVisibilityCount(plot:GetIndex(), level or 1);
 end
 
 ------------------------------------------------------------------------------
@@ -360,46 +364,35 @@ function AssignStartingPlots:__SetStartMajor(plots)
 
 	local bValid = false;
 	local pFallback:table = nil;
-	local iFallBackScore = 1;
+	local iCrunch = 0;
+	local iScore = 0;
 	while bValid == false and iSize >= iContinentIndex do
+		local score = 5;
 		bValid = true;
 		local NWMajor = 0;
 		pTempPlot = Map.GetPlotByIndex(sortedPlots[iContinentIndex].Plot);
 		iContinentIndex = iContinentIndex + 1;
 		--print("Fertility: ", sortedPlots[iContinentIndex].Fertility)
 
+		-- XXX: debug
+		--RevealPlot(pTempPlot);
+
 		-- Checks to see if the plot is impassable
 		if(pTempPlot:IsImpassable() == true) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 0;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 10;
 		end
 
 		-- Checks to see if the plot is water
 		if(pTempPlot:IsWater() == true) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 1;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 10;
 		end
 
 		-- Checks to see if there are any major civs in the given distance
-		local bMajorCivCheck = self:__MajorCivBuffer(pTempPlot);
-		if(bMajorCivCheck == false) then
+		local crunch = self:__MajorCivBuffer(pTempPlot);
+		if(crunch ~= 0) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 2;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
 		end
 
 		-- Checks to see if there are luxuries
@@ -407,15 +400,9 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			local bLuxuryCheck = self:__LuxuryBuffer(pTempPlot);
 			if(bLuxuryCheck  == false) then
 				bValid = false;
-			else
-				local iFallBackScoreTemp = 3;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+				score = score - 1;
 			end
 		end
-
 
 		--Checks to see if there are strategics
 		-- local bStrategicCheck = self:__StrategicBuffer(pTempPlot);
@@ -427,48 +414,28 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		local bWaterCheck = self:__GetWaterCheck(pTempPlot);
 		if(bWaterCheck == false) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 4;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 2;
 		end
 
 		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 0);
 		if(bValidAdjacentCheck == false) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 5;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 1;
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
 		local bNaturalWonderCheck = self:__NaturalWonderBuffer(pTempPlot, false);
 		if(bNaturalWonderCheck == false) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 6;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 1;
 		end
 
 		-- Checks to see if there are resources
 		if(pTempPlot:GetResourceCount() > 0) then
-		   local bValidResource = self:__BonusResource(pTempPlot);
-		    if(bValidResource == false) then
-		       bValid = false;
-			end
-		else
-			local iFallBackScoreTemp = 7;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
+			local bValidResource = self:__BonusResource(pTempPlot);
+			if(bValidResource == false) then
+				bValid = false;
+				score = score - 1;
 			end
 		end
 
@@ -476,21 +443,30 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		local featureType = pTempPlot:GetFeatureType();
 		if(featureType == g_FEATURE_OASIS) then
 			bValid = false;
+			score = score - 1;
 		end
 
 		-- If the plots passes all the checks then the plot equals the temp plot
-		if(bValid == true) then
+		if bValid == true then
 			self:__TryToRemoveBonusResource(pTempPlot);
 			self:__AddBonusFoodProduction(pTempPlot);
-			print(string.format("major ok"));
+			print(string.format("major ok: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
 			return pTempPlot;
+		end
+
+		-- Otherwise, remember this plot if it's the best seen so far
+		if iScore - iCrunch < score - crunch then
+			iCrunch = crunch;
+			iScore = score;
+			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			pFallback = pTempPlot;
 		end
 	end
 
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
 		self:__AddBonusFoodProduction(pTempPlot);
-		print(string.format("major fallback %d", iFallBackScore));
+		print(string.format("major fallback: (%d-%d)", iScore, iCrunch));
 	else
 		print(string.format("major failed"));
 	end
@@ -532,69 +508,48 @@ function AssignStartingPlots:__SetStartMinor(plots)
 
 	local bValid = false;
 	local pFallback:table = nil;
-	local iFallBackScore = 1;
+	local iCrunch = 0;
+	local iScore = 0;
 	while bValid == false and iSize >= iContinentIndex do
+		local score = 3;
 		bValid = true;
 		local NWMinor = 2;
 		pTempPlot = Map.GetPlotByIndex(sortedPlots[iContinentIndex].Plot);
 		iContinentIndex = iContinentIndex + 1;
 		--print("Fertility: ", sortedPlots[iContinentIndex].Fertility)
 
+		-- XXX: debug
+		--RevealPlot(pTempPlot);
+
 		-- Checks to see if the plot is impassable
 		if(pTempPlot:IsImpassable() == true) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 0;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 10;
 		end
 
 		-- Checks to see if the plot is water
 		if(pTempPlot:IsWater() == true) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 1;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 10;
 		end
 
-		-- Checks to see if there are any minor civs in the given distance
-		local bMinorCivCheck = self:__MinorCivBuffer(pTempPlot, 1);
-		if(bMinorCivCheck == false) then
+		-- Checks to see if there are any civs in the given distance
+		local crunch = self:__MinorCivBuffer(pTempPlot, 1);
+		if(crunch ~= 0) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 2;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
 		end
 
 		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
 		if(bValidAdjacentCheck == false) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 3;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 1;
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
 		local bNaturalWonderCheck = self:__NaturalWonderBuffer(pTempPlot, true);
 		if(bNaturalWonderCheck == false) then
 			bValid = false;
-		else
-			local iFallBackScoreTemp = 4;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
-			end
+			score = score - 1;
 		end
 
 		-- Checks to see if there are resources
@@ -602,12 +557,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			local bValidResource = self:__BonusResource(pTempPlot);
 			if(bValidResource == false) then
 				bValid = false;
-			end
-		else
-			local iFallBackScoreTemp = 5;
-			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
-				pFallback = pTempPlot;
-				iFallBackScore = iFallBackScoreTemp;
+				score = score - 1;
 			end
 		end
 
@@ -615,19 +565,28 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		local featureType = pTempPlot:GetFeatureType();
 		if(featureType == g_FEATURE_OASIS) then
 			bValid = false;
+			score = score - 1;
 		end
 
 		-- If the plots passes all the checks then the plot equals the temp plot
 		if(bValid == true) then
 			self:__TryToRemoveBonusResource(pTempPlot);
-			print(string.format("minor ok"));
+			print(string.format("minor ok: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
 			return pTempPlot;
+		end
+
+		-- Otherwise, remember this plot if it's the best seen so far
+		if iScore - iCrunch < score - crunch then
+			iCrunch = crunch;
+			iScore = score;
+			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			pFallback = pTempPlot;
 		end
 	end
 
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
-		print(string.format("minor fallback %d", iFallBackScore));
+		print(string.format("minor fallback: (%d-%d)", iScore, iCrunch));
 	else
 		print(string.format("minor failed"));
 	end
@@ -1001,14 +960,19 @@ function AssignStartingPlots:__MajorCivBuffer(plot)
 		end
 	end
 
+	local iMajor = iMaxStart + 1;  -- ideal minimum distance to major civs
+	local iCrunch = 0;  -- total encroachment
 	local iSourceIndex = plot:GetIndex();
 	for i, majorPlot in ipairs(self.majorStartPlots) do
-		if(Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex()) <= iMaxStart) then
-			return false;
+		local iDistance = Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex());
+		if iDistance < iMajor then
+			--print(string.format("close major: %d/%d", iDistance, iMajor));
+			iCrunch = iCrunch + iMajor - iDistance;
 		end
 	end
 
-	return true;
+	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
+	return iCrunch;
 end
 
 ------------------------------------------------------------------------------
@@ -1029,21 +993,30 @@ function AssignStartingPlots:__MinorCivBuffer(plot, minorAdjustment)
 		end
 	end
 
+	local iCrunch = 0;
+	local iMajor = iMaxStart + 1;
+	local iMinor = iMaxStart + 1 - minorAdjustment;
+
+	-- Measure distance to nearest major civ
 	for i, majorPlot in ipairs(self.majorCopy) do
-		if(Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex()) <= iMaxStart) then
-			return false;
+		local iDistance = Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex());
+		if iDistance < iMajor then
+			--print(string.format("close major: %d/%d", iDistance, iMajor));
+			iCrunch = iCrunch + iMajor - iDistance;
 		end
 	end
 
-	--Check if there there is a minor civ too close to a minor
-	iMaxStart = iMaxStart - minorAdjustment;
+	-- Measure distance to nearest minor civ
 	for i, minorPlot in ipairs(self.minorStartPlots) do
-		if(Map.GetPlotDistance(iSourceIndex, minorPlot:GetIndex()) <= iMaxStart) then
-			return false;
+		local iDistance = Map.GetPlotDistance(iSourceIndex, minorPlot:GetIndex());
+		if iDistance < iMinor then
+			--print(string.format("close minor: %d/%d", iDistance, iMinor));
+			iCrunch = iCrunch + iMinor - iDistance;
 		end
 	end
 
-	return true;
+	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
+	return iCrunch;
 end
 
 ------------------------------------------------------------------------------
