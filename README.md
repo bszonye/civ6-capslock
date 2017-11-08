@@ -1,2 +1,2 @@
-# civ6-hotspots
-Hot Spots mod for Civilization VI
+# civ6-capslock
+Caps Lock mod for Civilization VI
