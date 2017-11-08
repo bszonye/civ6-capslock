@@ -302,14 +302,16 @@ end
 ------------------------------------------------------------------------------
 -- XXX: debug
 function RevealAll(level:number)
-	local pVis = PlayersVisibility[Game.GetLocalPlayer()];
-	for iPlotIndex = 0, Map.GetPlotCount()-1, 1 do
-		pVis:ChangeVisibilityCount(iPlotIndex, level or 1);
+	for index = 0, Map.GetPlotCount()-1, 1 do
+		RevealIndex(index, level);
 	end
 end
-function RevealPlot(plot:table, level:number)
+function RevealIndex(index:number, level:number)
 	local pVis = PlayersVisibility[Game.GetLocalPlayer()];
-	pVis:ChangeVisibilityCount(plot:GetIndex(), level or 1);
+	pVis:ChangeVisibilityCount(index, level or 1);
+end
+function RevealPlot(plot:table, level:number)
+	RevealIndex(plot:GetIndex(), level);
 end
 
 ------------------------------------------------------------------------------
@@ -342,6 +344,8 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		row.Plot = plot;
 		row.Fertility = self:__WeightedFertility(plot);
 		table.insert (sortedPlots, row);
+		-- XXX: debug
+		--RevealIndex(plot, 0);
 	end
 
 	if(self.uiStartConfig > 1 ) then
@@ -502,6 +506,8 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		row.Plot = plot;
 		row.Fertility = self:__WeightedFertility(plot);
 		table.insert (sortedPlots, row);
+		-- XXX: debug
+		--RevealIndex(plot, 0);
 	end
 
 	table.sort (sortedPlots, function(a, b) return a.Fertility > b.Fertility; end);
