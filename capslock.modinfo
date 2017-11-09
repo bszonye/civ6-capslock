@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Mod id="475e175c-0e19-4918-8771-3b849b261ac2" version="0.9.0">
+<Mod id="475e175c-0e19-4918-8771-3b849b261ac2" version="0.9.1">
   <Properties>
     <Name>Caps Lock</Name>
     <Description>Starting plot improvements</Description>
@@ -10,7 +10,7 @@
   <InGameActions>
     <ImportFiles id="CAPSLOCK_FILES">
       <Properties>
-        <LoadOrder>12000</LoadOrder>
+        <LoadOrder>1</LoadOrder>
       </Properties>
       <File>assignstartingplots.lua</File>
     </ImportFiles>
