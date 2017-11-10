@@ -296,7 +296,10 @@ function AssignStartingPlots:__InitStartingData()
 	end
 
 	-- XXX: debug
-	--RevealAll(0);
+	-- Test seed: -348648294 / -348648293 (standard)
+	-- Test seed: -355184160 / -355184159 (huge)
+	--RevealAll(0);  -- explore all
+	--RevealAll(1);  -- reveal all
 end
 
 ------------------------------------------------------------------------------
@@ -422,9 +425,10 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		end
 
 		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 0);
-		if(bValidAdjacentCheck == false) then
+		if(bValidAdjacentCheck ~= 0) then
 			bValid = false;
-			score = score - 1;
+			score = score - bValidAdjacentCheck;
+			print(string.format("major GetValidAdjacent: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), bValidAdjacentCheck, crunch));
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
@@ -454,7 +458,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		if bValid == true then
 			self:__TryToRemoveBonusResource(pTempPlot);
 			self:__AddBonusFoodProduction(pTempPlot);
-			print(string.format("major ok: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
+			print(string.format("major: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
 			return pTempPlot;
 		end
 
@@ -462,7 +466,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		if iScore - iCrunch < score - crunch then
 			iCrunch = crunch;
 			iScore = score;
-			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 			pFallback = pTempPlot;
 		end
 	end
@@ -470,9 +474,9 @@ function AssignStartingPlots:__SetStartMajor(plots)
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
 		self:__AddBonusFoodProduction(pTempPlot);
-		print(string.format("major fallback: (%d-%d)", iScore, iCrunch));
+		print(string.format("MAJOR: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 	else
-		print(string.format("major failed"));
+		print(string.format("MAJOR FAILED"));
 	end
 	return pFallback;
 end
@@ -546,9 +550,10 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		end
 
 		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
-		if(bValidAdjacentCheck == false) then
+		if(bValidAdjacentCheck ~= 0) then
 			bValid = false;
-			score = score - 1;
+			score = score - bValidAdjacentCheck;
+			print(string.format("minor GetValidAdjacent: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), bValidAdjacentCheck, crunch));
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
@@ -577,7 +582,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		-- If the plots passes all the checks then the plot equals the temp plot
 		if(bValid == true) then
 			self:__TryToRemoveBonusResource(pTempPlot);
-			print(string.format("minor ok: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
+			print(string.format("minor: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
 			return pTempPlot;
 		end
 
@@ -585,16 +590,16 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		if iScore - iCrunch < score - crunch then
 			iCrunch = crunch;
 			iScore = score;
-			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 			pFallback = pTempPlot;
 		end
 	end
 
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
-		print(string.format("minor fallback: (%d-%d)", iScore, iCrunch));
+		print(string.format("MINOR: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 	else
-		print(string.format("minor failed"));
+		print(string.format("MINOR FAILED"));
 	end
 	return pFallback;
 end
@@ -642,8 +647,15 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 		min = math.ceil(gridHeight * self.uiStartMinY / 100);
 	end
 
+	-- This biases the map away from the south pole, maybe an off-by-one error?
+	-- It matches the way the map scripts put snow on the map, however.
+	local polar = 0;
 	if(plot:GetY() <= min or plot:GetY() > gridHeight - max) then
-		return false;
+		-- distance out of bounds
+		local south = math.max(0, min - plot:GetY() + 1);
+		local north = math.max(0, plot:GetY() - (gridHeight - max));
+		-- penalty for being out of bounds
+		polar = 1 + south + north;  -- minimum 2
 	end
 
 	for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
@@ -687,26 +699,64 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 	if(self.uiStartConfig == 1 and  minor == 0) then
 		balancedStart = 1;
 	end
-
+	
+	local stuck = 0;
 	if((impassable >= 2 + minor - balancedStart or (self.landMap == true and impassable >= 2 + minor)) and self.waterMap == false) then
-		return false;
+		stuck = 1;
 	elseif(self.waterMap == true and impassable >= 2 + minor * 2 - balancedStart) then
-		return false;
+		stuck = 1;
 	elseif(water + impassable  >= 4 + minor - balancedStart and self.waterMap == false) then
-		return false;
+		stuck = 1;
 	elseif(water >= 3 + minor - balancedStart) then
-		return false;
+		stuck = 1;
 	elseif(water >= 4 + minor and self.waterMap == true) then
-		return false;
-	elseif(minor == 0 and desert > 2 - balancedStart) then
-		return false;
-	elseif(minor == 0 and snow > 1 - balancedStart) then
-		return false;
-	elseif(minor > 0 and snow > 2) then
-		return false;
-	else
-		return true;
+		stuck = 1;
 	end
+
+	local waste = 0;
+	if(minor == 0 and desert > 2 - balancedStart) then
+		waste = 1;
+	elseif(minor == 0 and snow > 1 - balancedStart) then
+		waste = 1;
+	elseif(minor > 0 and snow > 2) then
+		waste = 1;
+	end
+
+	local awful = 0;
+	local badness = impassable + water + desert + snow;
+	if minor == 0 and badness > 3 then
+		awful = 1;
+	end
+
+	if nil then
+		local stuck = 0;
+		if self.waterMap == false then
+			local ok = 1 + minor - balancedStart;
+			stuck = math.max(0, impassable - ok) + math.max(0, water - ok);
+		else
+			local okI = 1 + minor * 2 - balancedStart;
+			local okW = 3 + minor;
+			stuck = math.max(0, impassable - okI) + math.max(0, water - okW);
+		end
+		if impassable + water > 5 then
+			stuck = stuck + 1
+		end
+
+		local waste = 0;
+		if minor == 0 then
+			local okD = 2 - balancedStart;
+			local okS = 1 - balancedStart;
+			waste = math.max(0, desert - okD) + math.max(0, snow - okS);
+		else
+			waste = math.max(0, snow - 2);
+		end
+	end
+
+	local penalty = polar + stuck + waste; -- + awful;
+	if polar ~= 0 or (penalty == 0 and awful ~= 0) then
+		print(string.format("penalty %d (badness %d imp %d water %d desert %d snow %d polar %d stuck %d waste %d)", penalty, badness, impassable, water, desert, snow, polar, stuck, waste));
+	end
+	return penalty;
 end
 
 ------------------------------------------------------------------------------
