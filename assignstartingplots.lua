@@ -296,8 +296,10 @@ function AssignStartingPlots:__InitStartingData()
 	end
 
 	-- XXX: debug
-	-- Test seed: -348648294 / -348648293 (standard)
-	-- Test seed: -355184160 / -355184159 (huge)
+	-- Test seed: -348648293 (standard)
+	-- Test seed: -355184159 (standard or huge)
+	-- Test seed: 1911259460 (standard, new age, crowded)
+	-- Test seed: -975958907 (standard, pangaea, new age, crowded)
 	--RevealAll(0);  -- explore all
 	--RevealAll(1);  -- reveal all
 end
@@ -474,7 +476,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
 		self:__AddBonusFoodProduction(pTempPlot);
-		print(string.format("MAJOR: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+		print(string.format("MAJOR: %d:%d (%d-%d)", pFallback:GetX(), pFallback:GetY(), iScore, iCrunch));
 	else
 		print(string.format("MAJOR FAILED"));
 	end
@@ -597,7 +599,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 
 	if pFallback then
 		self:__TryToRemoveBonusResource(pTempPlot);
-		print(string.format("MINOR: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+		print(string.format("MINOR: %d:%d (%d-%d)", pFallback:GetX(), pFallback:GetY(), iScore, iCrunch));
 	else
 		print(string.format("MINOR FAILED"));
 	end
@@ -700,6 +702,11 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 		balancedStart = 1;
 	end
 	
+	-- XXX: debug
+	if plot:IsImpassable() ~= true and impassable + water >= 6 then
+		print(string.format("STUCK: %d:%d impassable %d water %d", plot:GetX(), plot:GetY(), impassable, water));
+	end
+
 	local stuck = 0;
 	if((impassable >= 2 + minor - balancedStart or (self.landMap == true and impassable >= 2 + minor)) and self.waterMap == false) then
 		stuck = 1;
@@ -722,34 +729,11 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 		waste = 1;
 	end
 
+	-- TODO: handle special situations like all mountains & all snow
 	local awful = 0;
 	local badness = impassable + water + desert + snow;
 	if minor == 0 and badness > 3 then
 		awful = 1;
-	end
-
-	if nil then
-		local stuck = 0;
-		if self.waterMap == false then
-			local ok = 1 + minor - balancedStart;
-			stuck = math.max(0, impassable - ok) + math.max(0, water - ok);
-		else
-			local okI = 1 + minor * 2 - balancedStart;
-			local okW = 3 + minor;
-			stuck = math.max(0, impassable - okI) + math.max(0, water - okW);
-		end
-		if impassable + water > 5 then
-			stuck = stuck + 1
-		end
-
-		local waste = 0;
-		if minor == 0 then
-			local okD = 2 - balancedStart;
-			local okS = 1 - balancedStart;
-			waste = math.max(0, desert - okD) + math.max(0, snow - okS);
-		else
-			waste = math.max(0, snow - 2);
-		end
 	end
 
 	local penalty = polar + stuck + waste; -- + awful;
