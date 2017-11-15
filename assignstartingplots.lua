@@ -426,11 +426,10 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			score = score - 2;
 		end
 
-		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 0);
-		if(bValidAdjacentCheck ~= 0) then
+		local iValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 0);
+		if(iValidAdjacentCheck ~= 0) then
 			bValid = false;
-			score = score - bValidAdjacentCheck;
-			print(string.format("major GetValidAdjacent: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), bValidAdjacentCheck, crunch));
+			score = score - iValidAdjacentCheck;
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
@@ -468,7 +467,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		if iScore - iCrunch < score - crunch then
 			iCrunch = crunch;
 			iScore = score;
-			print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 			pFallback = pTempPlot;
 		end
 	end
@@ -551,11 +550,10 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		end
 
-		local bValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
-		if(bValidAdjacentCheck ~= 0) then
+		local iValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
+		if(iValidAdjacentCheck ~= 0) then
 			bValid = false;
-			score = score - bValidAdjacentCheck;
-			print(string.format("minor GetValidAdjacent: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), bValidAdjacentCheck, crunch));
+			score = score - iValidAdjacentCheck;
 		end
 
 		-- Checks to see if there are natural wonders in the given distance
@@ -592,7 +590,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		if iScore - iCrunch < score - crunch then
 			iCrunch = crunch;
 			iScore = score;
-			print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
+			--print(string.format("maybe: %d:%d (%d-%d)", pTempPlot:GetX(), pTempPlot:GetY(), iScore, iCrunch));
 			pFallback = pTempPlot;
 		end
 	end
@@ -702,11 +700,6 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 		balancedStart = 1;
 	end
 	
-	-- XXX: debug
-	if plot:IsImpassable() ~= true and impassable + water >= 6 then
-		print(string.format("STUCK: %d:%d impassable %d water %d", plot:GetX(), plot:GetY(), impassable, water));
-	end
-
 	local stuck = 0;
 	if((impassable >= 2 + minor - balancedStart or (self.landMap == true and impassable >= 2 + minor)) and self.waterMap == false) then
 		stuck = 1;
@@ -730,16 +723,11 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 	end
 
 	-- TODO: handle special situations like all mountains & all snow
-	local awful = 0;
-	local badness = impassable + water + desert + snow;
-	if minor == 0 and badness > 3 then
-		awful = 1;
+	-- XXX: debug
+	if plot:IsImpassable() ~= true and impassable + water >= 6 then
+		print(string.format("STUCK: %d:%d impassable %d water %d", plot:GetX(), plot:GetY(), impassable, water));
 	end
-
-	local penalty = polar + stuck + waste; -- + awful;
-	if polar ~= 0 or (penalty == 0 and awful ~= 0) then
-		print(string.format("penalty %d (badness %d imp %d water %d desert %d snow %d polar %d stuck %d waste %d)", penalty, badness, impassable, water, desert, snow, polar, stuck, waste));
-	end
+	local penalty = polar + stuck + waste;
 	return penalty;
 end
 
