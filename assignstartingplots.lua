@@ -22,7 +22,8 @@ function AssignStartingPlots.Create(args)
 		__StrategicBuffer					= AssignStartingPlots.__StrategicBuffer,
 		__CivilizationBuffer				= AssignStartingPlots.__CivilizationBuffer,
 		__MajorCivBuffer					= AssignStartingPlots.__MajorCivBuffer,
-		__MinorCivBuffer					= AssignStartingPlots.__MinorCivBuffer,
+		__MinorMajorCivBuffer				= AssignStartingPlots.__MinorMajorCivBuffer,
+		__MinorMinorCivBuffer				= AssignStartingPlots.__MinorMinorCivBuffer,
 		__WeightedFertility					= AssignStartingPlots.__WeightedFertility,
 		__AddBonusFoodProduction			= AssignStartingPlots.__AddBonusFoodProduction,
 		__AddFood							= AssignStartingPlots.__AddFood,
@@ -399,10 +400,12 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		end
 
 		-- Checks to see if there are any major civs in the given distance
-		local crunch = self:__MajorCivBuffer(pTempPlot);
-		if(crunch ~= 0) then
+		local iMajorCivCheck = self:__MajorCivBuffer(pTempPlot);
+		if(iMajorCivCheck ~= 0) then
 			bValid = false;
 		end
+
+		local crunch = iMajorCivCheck;
 
 		-- Checks to see if there are luxuries
 		if (math.ceil(self.iDefaultNumberMajor * 1.25) + self.iDefaultNumberMinor > self.iNumMinorCivs + self.iNumMajorCivs) then
@@ -456,7 +459,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		end
 
 		-- If the plots passes all the checks then the plot equals the temp plot
-		if bValid == true then
+		if(bValid == true) then
 			self:__TryToRemoveBonusResource(pTempPlot);
 			self:__AddBonusFoodProduction(pTempPlot);
 			print(string.format("major: %d:%d", pTempPlot:GetX(), pTempPlot:GetY()));
@@ -544,11 +547,19 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			score = score - 10;
 		end
 
-		-- Checks to see if there are any civs in the given distance
-		local crunch = self:__MinorCivBuffer(pTempPlot, 1);
-		if(crunch ~= 0) then
+		-- Checks to see if there are any major civs in the given distance
+		local iMajorCivCheck = self:__MinorMajorCivBuffer(pTempPlot);
+		if(iMajorCivCheck ~= 0) then
 			bValid = false;
 		end
+
+		-- Checks to see if there are any minor civs in the given distance
+		local iMinorCivCheck = self:__MinorMinorCivBuffer(pTempPlot, 1);
+		if(iMinorCivCheck ~= 0) then
+			bValid = false;
+		end
+
+		local crunch = iMajorCivCheck + iMinorCivCheck;
 
 		local iValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
 		if(iValidAdjacentCheck ~= 0) then
@@ -1004,26 +1015,15 @@ function AssignStartingPlots:__MajorCivBuffer(plot)
 end
 
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__MinorCivBuffer(plot, minorAdjustment)
-	-- Checks to see if there are civs in the given distance for this minor civ
+function AssignStartingPlots:__MinorMajorCivBuffer(plot)
+	-- Checks to see if there are majors in the given distance for this minor civ
 
 	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
 
 	local iSourceIndex = plot:GetIndex();
 
-	if(self.waterMap == true) then
-		if(minorAdjustment > 0) then
-			iMaxStart = iMaxStart - 1;
-		end
-	else
-		if(self.iDefaultNumberMajor > 4 and self.iNumMajorCivs <= self.iDefaultNumberMajor and self.iNumMinorCivs <= self.iDefaultNumberMinor) then
-			iMaxStart = iMaxStart + 2;
-		end
-	end
-
 	local iCrunch = 0;
 	local iMajor = iMaxStart + 1;
-	local iMinor = iMaxStart + 1 - minorAdjustment;
 
 	-- Measure distance to nearest major civ
 	for i, majorPlot in ipairs(self.majorCopy) do
@@ -1033,6 +1033,27 @@ function AssignStartingPlots:__MinorCivBuffer(plot, minorAdjustment)
 			iCrunch = iCrunch + iMajor - iDistance;
 		end
 	end
+
+	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
+	return iCrunch;
+end
+
+------------------------------------------------------------------------------
+function AssignStartingPlots:__MinorMinorCivBuffer(plot, minorAdjustment)
+	-- Checks to see if there are minors in the given distance for this minor civ
+
+	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
+
+	local iSourceIndex = plot:GetIndex();
+
+	if(self.waterMap == true) then
+		if(minorAdjustment > 0) then
+			iMaxStart = iMaxStart - 1;
+		end
+	end
+
+	local iCrunch = 0;
+	local iMinor = iMaxStart + 1 - minorAdjustment;
 
 	-- Measure distance to nearest minor civ
 	for i, minorPlot in ipairs(self.minorStartPlots) do
