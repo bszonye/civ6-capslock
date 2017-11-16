@@ -22,7 +22,8 @@ function AssignStartingPlots.Create(args)
 		__StrategicBuffer					= AssignStartingPlots.__StrategicBuffer,
 		__CivilizationBuffer				= AssignStartingPlots.__CivilizationBuffer,
 		__MajorCivBuffer					= AssignStartingPlots.__MajorCivBuffer,
-		__MinorCivBuffer					= AssignStartingPlots.__MinorCivBuffer,
+		__MinorMajorCivBuffer				= AssignStartingPlots.__MinorMajorCivBuffer,
+		__MinorMinorCivBuffer				= AssignStartingPlots.__MinorMinorCivBuffer,
 		__WeightedFertility					= AssignStartingPlots.__WeightedFertility,
 		__AddBonusFoodProduction			= AssignStartingPlots.__AddBonusFoodProduction,
 		__AddFood							= AssignStartingPlots.__AddFood,
@@ -349,7 +350,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 
 	local bValid = false;
 	local pFallback:table = Map.GetPlotByIndex(sortedPlots[1].Plot);
-	local iFallBackScore = 0;
+	local iFallBackScore = -1;
 	while bValid == false and iSize >= iContinentIndex do
 		bValid = true;
 		local NWMajor = 0;
@@ -362,7 +363,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 0;
-			if (iFallBackScore <= iFallBackScoreTemp) then
+			if (iFallBackScore < iFallBackScoreTemp) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -373,7 +374,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 1;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -385,7 +386,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 2;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -398,7 +399,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 				bValid = false;
 			else
 				local iFallBackScoreTemp = 3;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -418,7 +419,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 4;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -429,7 +430,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 5;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -441,7 +442,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 6;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -455,7 +456,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			end
 		else
 			local iFallBackScoreTemp = 7;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -513,7 +514,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 
 	local bValid = false;
 	local pFallback:table = Map.GetPlotByIndex(sortedPlots[1].Plot);
-	local iFallBackScore = 0;
+	local iFallBackScore = -1;
 	while bValid == false and iSize >= iContinentIndex do
 		bValid = true;
 		local NWMinor = 2;
@@ -526,7 +527,7 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 0;
-			if (iFallBackScore <= iFallBackScoreTemp) then
+			if (iFallBackScore < iFallBackScoreTemp) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -537,19 +538,31 @@ function AssignStartingPlots:__SetStartMinor(plots)
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 1;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
 		end
 		
 		-- Checks to see if there are any minor civs in the given distance
-		local bMinorCivCheck = self:__MinorCivBuffer(pTempPlot, 1); 
+		local bMinorCivCheck = self:__MinorMajorCivBuffer(pTempPlot); 
 		if(bMinorCivCheck == false) then
 			bValid = false;
 		else
 			local iFallBackScoreTemp = 2;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
+				pFallback = pTempPlot;
+				iFallBackScore = iFallBackScoreTemp;
+			end
+		end		
+
+		-- Checks to see if there are any minor civs in the given distance
+		local bMinorCivCheck = self:__MinorMinorCivBuffer(pTempPlot, 1); 
+		if(bMinorCivCheck == false) then
+			bValid = false;
+		else
+			local iFallBackScoreTemp = 3;
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -559,8 +572,8 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		if(bValidAdjacentCheck == false) then
 			bValid = false;
 		else
-			local iFallBackScoreTemp = 3;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			local iFallBackScoreTemp = 4;
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -571,8 +584,8 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		if(bNaturalWonderCheck == false) then
 			bValid = false;
 		else
-			local iFallBackScoreTemp = 4;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			local iFallBackScoreTemp = 5;
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -585,8 +598,8 @@ function AssignStartingPlots:__SetStartMinor(plots)
 				bValid = false;
 			end
 		else
-			local iFallBackScoreTemp = 5;
-			if (iFallBackScore <= iFallBackScoreTemp and bValid == true) then
+			local iFallBackScoreTemp = 6;
+			if (iFallBackScore < iFallBackScoreTemp and bValid == true) then
 				pFallback = pTempPlot;
 				iFallBackScore = iFallBackScoreTemp;
 			end
@@ -970,9 +983,6 @@ function AssignStartingPlots:__MajorCivBuffer(plot)
 	if(self.waterMap == true) then
 		iMaxStart = iMaxStart - 2;
 	else
-		if(self.iDefaultNumberMajor > 4 and self.iNumMajorCivs <= self.iDefaultNumberMajor) then
-			iMaxStart = iMaxStart + 1;
-		end
 	end
 
 	local iSourceIndex = plot:GetIndex();
@@ -986,8 +996,25 @@ function AssignStartingPlots:__MajorCivBuffer(plot)
 end
 
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__MinorCivBuffer(plot, minorAdjustment)
-	-- Checks to see if there are civs in the given distance for this minor civ
+function AssignStartingPlots:__MinorMajorCivBuffer(plot)
+	-- Checks to see if there are najors in the given distance for this minor civ
+
+	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
+
+	local iSourceIndex = plot:GetIndex();
+
+	for i, majorPlot in ipairs(self.majorCopy) do
+		if(Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex()) <= iMaxStart) then
+			return false;
+		end
+	end 
+
+	return true;
+end
+
+------------------------------------------------------------------------------
+function AssignStartingPlots:__MinorMinorCivBuffer(plot, minorAdjustment)
+	-- Checks to see if there are minors in the given distance for this minor civ
 
 	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
 
@@ -998,18 +1025,8 @@ function AssignStartingPlots:__MinorCivBuffer(plot, minorAdjustment)
 			iMaxStart = iMaxStart - 1;
 		end
 	else
-		if(self.iDefaultNumberMajor > 4 and self.iNumMajorCivs <= self.iDefaultNumberMajor and self.iNumMinorCivs <= self.iDefaultNumberMinor) then
-			iMaxStart = iMaxStart + 2;
-		end
 	end
 
-	for i, majorPlot in ipairs(self.majorCopy) do
-		if(Map.GetPlotDistance(iSourceIndex, majorPlot:GetIndex()) <= iMaxStart) then
-			return false;
-		end
-	end 
-
-	--Check if there there is a minor civ too close to a minor
 	iMaxStart = iMaxStart - minorAdjustment;
 	for i, minorPlot in ipairs(self.minorStartPlots) do
 		if(Map.GetPlotDistance(iSourceIndex, minorPlot:GetIndex()) <= iMaxStart) then
