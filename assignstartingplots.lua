@@ -46,6 +46,8 @@ function AssignStartingPlots.Create(args)
 		__AddLuxury							= AssignStartingPlots.__AddLuxury,
 		__AddBonus							= AssignStartingPlots.__AddBonus,
 		__IsContinentalDivide				= AssignStartingPlots.__IsContinentalDivide,
+		-- Caps Lock methods
+		__WeightScore						= AssignStartingPlots.__WeightScore,
 
 		iNumMajorCivs = 0,
 		iResourceEraModifier = 1;
@@ -82,6 +84,17 @@ function AssignStartingPlots.Create(args)
 
 	return instance
 end
+
+------------------------------------------------------------------------------
+function AssignStartingPlots:__WeightScore(score, weight, falseScore)
+	-- convert boolean "true" to 0 numeric score
+	if score == true then
+		return 0;
+	end
+	-- otherwise, convert false/nil to numeric score
+	return (score or falseScore or 1) * (weight or 1);
+end
+
 ------------------------------------------------------------------------------
 function AssignStartingPlots:__InitStartingData()
 	if(self.uiMinMajorCivFertility <= 0) then
@@ -331,6 +344,9 @@ function AssignStartingPlots:__SetStartMajor(plots)
 	-- minimum luxuries
 	-- minimum strategic
 
+	-- XXX: debug
+	--RevealAll(1);  -- reveal all
+
 	sortedPlots ={};
 
 	if plots == nil then
@@ -400,7 +416,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 		end
 
 		-- Checks to see if there are any major civs in the given distance
-		local iMajorCivCheck = self:__MajorCivBuffer(pTempPlot);
+		local iMajorCivCheck = self:__WeightScore(self:__MajorCivBuffer(pTempPlot, true));
 		if(iMajorCivCheck ~= 0) then
 			bValid = false;
 		end
@@ -429,7 +445,7 @@ function AssignStartingPlots:__SetStartMajor(plots)
 			score = score - 2;
 		end
 
-		local iValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 0);
+		local iValidAdjacentCheck = self:__WeightScore(self:__GetValidAdjacent(pTempPlot, 0, true), 1, 3);
 		if(iValidAdjacentCheck ~= 0) then
 			bValid = false;
 			score = score - iValidAdjacentCheck;
@@ -494,6 +510,9 @@ function AssignStartingPlots:__SetStartMinor(plots)
 	-- minimum production
 	-- minimum food
 
+	-- XXX: debug
+	--RevealAll(1);  -- reveal all
+
 	sortedPlots ={};
 
 	if plots == nil then
@@ -548,20 +567,20 @@ function AssignStartingPlots:__SetStartMinor(plots)
 		end
 
 		-- Checks to see if there are any major civs in the given distance
-		local iMajorCivCheck = self:__MinorMajorCivBuffer(pTempPlot);
+		local iMajorCivCheck = self:__WeightScore(self:__MinorMajorCivBuffer(pTempPlot, true));
 		if(iMajorCivCheck ~= 0) then
 			bValid = false;
 		end
 
 		-- Checks to see if there are any minor civs in the given distance
-		local iMinorCivCheck = self:__MinorMinorCivBuffer(pTempPlot, 1);
+		local iMinorCivCheck = self:__WeightScore(self:__MinorMinorCivBuffer(pTempPlot, 1, true));
 		if(iMinorCivCheck ~= 0) then
 			bValid = false;
 		end
 
 		local crunch = iMajorCivCheck + iMinorCivCheck;
 
-		local iValidAdjacentCheck = self:__GetValidAdjacent(pTempPlot, 2);
+		local iValidAdjacentCheck = self:__WeightScore(self:__GetValidAdjacent(pTempPlot, 2, true), 1, 3);
 		if(iValidAdjacentCheck ~= 0) then
 			bValid = false;
 			score = score - iValidAdjacentCheck;
@@ -630,7 +649,7 @@ function AssignStartingPlots:__GetWaterCheck(plot)
 	return false;
 end
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__GetValidAdjacent(plot, minor)
+function AssignStartingPlots:__GetValidAdjacent(plot, minor, numeric)
 
 	local impassable = 0;
 	local food = 0;
@@ -739,7 +758,7 @@ function AssignStartingPlots:__GetValidAdjacent(plot, minor)
 		print(string.format("STUCK: %d:%d impassable %d water %d", plot:GetX(), plot:GetY(), impassable, water));
 	end
 	local penalty = polar + stuck + waste;
-	return penalty;
+	return numeric and penalty or penalty == 0;
 end
 
 ------------------------------------------------------------------------------
@@ -986,7 +1005,7 @@ function AssignStartingPlots:__StrategicBuffer(plot)
 end
 
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__MajorCivBuffer(plot)
+function AssignStartingPlots:__MajorCivBuffer(plot, numeric)
 	-- Checks to see if there are major civs in the given distance for this major civ
 
 	local iMaxStart = GlobalParameters.START_DISTANCE_MAJOR_CIVILIZATION or 9;
@@ -1011,11 +1030,11 @@ function AssignStartingPlots:__MajorCivBuffer(plot)
 	end
 
 	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
-	return iCrunch;
+	return numeric and iCrunch or iCrunch == 0;
 end
 
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__MinorMajorCivBuffer(plot)
+function AssignStartingPlots:__MinorMajorCivBuffer(plot, numeric)
 	-- Checks to see if there are majors in the given distance for this minor civ
 
 	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
@@ -1035,11 +1054,11 @@ function AssignStartingPlots:__MinorMajorCivBuffer(plot)
 	end
 
 	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
-	return iCrunch;
+	return numeric and iCrunch or iCrunch == 0;
 end
 
 ------------------------------------------------------------------------------
-function AssignStartingPlots:__MinorMinorCivBuffer(plot, minorAdjustment)
+function AssignStartingPlots:__MinorMinorCivBuffer(plot, minorAdjustment, numeric)
 	-- Checks to see if there are minors in the given distance for this minor civ
 
 	local iMaxStart = GlobalParameters.START_DISTANCE_MINOR_CIVILIZATION or 5;
@@ -1065,7 +1084,7 @@ function AssignStartingPlots:__MinorMinorCivBuffer(plot, minorAdjustment)
 	end
 
 	--print(string.format("crunch: %d/%d", iCrunch, iMaxStart));
-	return iCrunch;
+	return numeric and iCrunch or iCrunch == 0;
 end
 
 ------------------------------------------------------------------------------
