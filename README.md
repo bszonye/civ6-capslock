@@ -1,4 +1,4 @@
-# Caps Lock 0.9.4 [<img align="right" src="capslock.jpg" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1195009771)
+# Caps Lock 0.9.5 [<img align="right" src="capslock.jpg" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1195009771)
 Starting plot improvements for Civilization VI
 
 Caps Lock improves the rules for selecting starting locations. The game rates
